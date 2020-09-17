@@ -212,7 +212,7 @@ public:
 
 int main(int argc, char** argv)
 {
-	WorldParams wp{std::cout, 3000, 5, 20, 0.8, false, 3, 10, olc::vd2d(500, 500), olc::vd2d(0,0), olc::vi2d(512, 512), olc::vi2d(2, 2), 1, time(0), false, false};
+	WorldParams wp{std::cout, 3000, 5, 20, 0.8, false, 3, 10, olc::vd2d(500, 500), olc::vd2d(0,0), olc::vi2d(512, 512), olc::vi2d(2, 2), 1, (int)time(0), false, false};
 	for (int i = 1; i < argc; ++i) {
 		int falls = 0;
 		if (argc - i <= 1) {//no args
