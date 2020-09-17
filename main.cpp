@@ -245,11 +245,11 @@ int main(int argc, char** argv)
 			else if (strcmp(argv[i], "--suvRate") == 0) {
 				wp.suvRate = std::stod(argv[++i]);
 			}
-			else if (strcmp(argv[i], "--minMaxTravel") == 0) {
-				wp.minMaxTravel = std::stod(argv[++i]);
+			else if (strcmp(argv[i], "--minInfTime") == 0) {
+				wp.minInfTime = std::stod(argv[++i]);
 			}
-			else if (strcmp(argv[i], "--maxMaxTravel") == 0) {
-				wp.maxMaxTravel = std::stod(argv[++i]);
+			else if (strcmp(argv[i], "--maxInfTime") == 0) {
+				wp.maxInfTime = std::stod(argv[++i]);
 			}
 			else if (strcmp(argv[i], "--minPosX") == 0) {
 				wp.minPos.x = std::stod(argv[++i]);
