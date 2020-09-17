@@ -7,6 +7,8 @@
 
 #include "olcPixelGameEngine.h"
 
+#undef min
+
 const char* NODEHEADER = "id,current pos x,y,start pos x,y,infectable,infected,infected for,max travel,maxSpeed";
 const double PI = 3.141592;
 
@@ -54,27 +56,7 @@ public:
 	 wParams.minMaxTravel, wParams.maxMaxTravel, wParams.maxPos, wParams.minPos, wParams.maxSpeed, wParams.randSeed) {}
 
 	World(std::ostream& log, int numNodes, int minInfTime, int maxInfTime, double suvRate, bool reInfect, double minMaxTravel,
-	 double maxMaxTravel, olc::vd2d maxPos, olc::vd2d minPos, double maxSpeed, int randSeed = 0) 
-	: nodes(), minInfTime(minInfTime), maxInfTime(maxInfTime), suvRate(suvRate), maxSpeed(maxSpeed), stream(log)
-	{	
-		log << "seed," << randSeed << "\n";
-		log << "Node count," << numNodes << "\n";
-		log << "min infected time," << minInfTime << "\n";
-		log << "max infected time," << maxInfTime << "\n";
-		log << "survival rate," << suvRate << "\n";
-		log << "reinfect," << reInfect << "\n";
-		log << "maxSpeed," << maxSpeed << "\n";
-
-		log << NODEHEADER << "\n";
-		srand(randSeed);
-		olc::vd2d posDif = maxPos - minPos;
-		for (int i = 0; i < numNodes; ++i) {
-			olc::vd2d nodePos = minPos + olc::vd2d(drand(), drand()) * posDif;
-			double nodeMaxTravel = minMaxTravel + drand() * (maxMaxTravel - minMaxTravel);
-			nodes.emplace_back(log, i, nodePos, nodeMaxTravel, maxSpeed, reInfect);
-		}
-		nextSeed = rand();
-	}
+	 double maxMaxTravel, olc::vd2d maxPos, olc::vd2d minPos, double maxSpeed, int randSeed = 0);
 
 	World(World&) = delete;
 
@@ -124,6 +106,29 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Node& dt);
 };
+
+World::World(std::ostream& log, int numNodes, int minInfTime, int maxInfTime, double suvRate, bool reInfect, double minMaxTravel,
+	double maxMaxTravel, olc::vd2d maxPos, olc::vd2d minPos, double maxSpeed, int randSeed /*= 0*/) 
+	: nodes(), minInfTime(minInfTime), maxInfTime(maxInfTime), suvRate(suvRate), maxSpeed(maxSpeed), stream(log)
+{	
+	log << "seed," << randSeed << "\n";
+	log << "Node count," << numNodes << "\n";
+	log << "min infected time," << minInfTime << "\n";
+	log << "max infected time," << maxInfTime << "\n";
+	log << "survival rate," << suvRate << "\n";
+	log << "reinfect," << reInfect << "\n";
+	log << "maxSpeed," << maxSpeed << "\n";
+
+	log << NODEHEADER << "\n";
+	srand(randSeed);
+	olc::vd2d posDif = maxPos - minPos;
+	for (int i = 0; i < numNodes; ++i) {
+		olc::vd2d nodePos = minPos + olc::vd2d(drand(), drand()) * posDif;
+		double nodeMaxTravel = minMaxTravel + drand() * (maxMaxTravel - minMaxTravel);
+		nodes.emplace_back(log, i, nodePos, nodeMaxTravel, maxSpeed, reInfect);
+	}
+	nextSeed = rand();
+}
 
 void World::update(){
 	srand(nextSeed);
