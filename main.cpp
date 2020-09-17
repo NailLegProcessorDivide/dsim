@@ -7,6 +7,8 @@
 
 #include "olcPixelGameEngine.h"
 
+#undef min
+
 const char* NODEHEADER = "id,current pos x,y,start pos x,y,infectable,infected,infected for,max travel,maxSpeed";
 const double PI = 3.141592;
 
@@ -37,6 +39,7 @@ struct WorldParams {
 	int randSeed;
 	bool origin;
 	bool showRange;
+	bool outputNodeData = true;
 };
 
 class World {
@@ -49,32 +52,13 @@ public:
 	double maxSpeed;
 	std::ostream& stream;
 	int nextSeed;
+	bool outputNodeData;
 
 	World(WorldParams wParams) : World(wParams.log, wParams.numNodes, wParams.minInfTime, wParams.maxInfTime, wParams.suvRate, wParams.reInfect,
-	 wParams.minMaxTravel, wParams.maxMaxTravel, wParams.maxPos, wParams.minPos, wParams.maxSpeed, wParams.randSeed) {}
+	 wParams.minMaxTravel, wParams.maxMaxTravel, wParams.maxPos, wParams.minPos, wParams.maxSpeed, wParams.outputNodeData, wParams.randSeed) {}
 
 	World(std::ostream& log, int numNodes, int minInfTime, int maxInfTime, double suvRate, bool reInfect, double minMaxTravel,
-	 double maxMaxTravel, olc::vd2d maxPos, olc::vd2d minPos, double maxSpeed, int randSeed = 0) 
-	: nodes(), minInfTime(minInfTime), maxInfTime(maxInfTime), suvRate(suvRate), maxSpeed(maxSpeed), stream(log)
-	{	
-		log << "seed," << randSeed << "\n";
-		log << "Node count," << numNodes << "\n";
-		log << "min infected time," << minInfTime << "\n";
-		log << "max infected time," << maxInfTime << "\n";
-		log << "survival rate," << suvRate << "\n";
-		log << "reinfect," << reInfect << "\n";
-		log << "maxSpeed," << maxSpeed << "\n";
-
-		log << NODEHEADER << "\n";
-		srand(randSeed);
-		olc::vd2d posDif = maxPos - minPos;
-		for (int i = 0; i < numNodes; ++i) {
-			olc::vd2d nodePos = minPos + olc::vd2d(drand(), drand()) * posDif;
-			double nodeMaxTravel = minMaxTravel + drand() * (maxMaxTravel - minMaxTravel);
-			nodes.emplace_back(log, i, nodePos, nodeMaxTravel, maxSpeed, reInfect);
-		}
-		nextSeed = rand();
-	}
+	 double maxMaxTravel, olc::vd2d maxPos, olc::vd2d minPos, double maxSpeed, bool outputNodeData, int randSeed = 0);
 
 	World(World&) = delete;
 
@@ -125,17 +109,45 @@ public:
 	friend std::ostream& operator<<(std::ostream& os, const Node& dt);
 };
 
+World::World(std::ostream& log, int numNodes, int minInfTime, int maxInfTime, double suvRate, bool reInfect, double minMaxTravel,
+	double maxMaxTravel, olc::vd2d maxPos, olc::vd2d minPos, double maxSpeed, bool outputNodeData, int randSeed /*= 0*/) 
+	: nodes(), minInfTime(minInfTime), maxInfTime(maxInfTime), suvRate(suvRate), maxSpeed(maxSpeed), outputNodeData(outputNodeData), stream(log)
+{	
+	log << "seed," << randSeed << "\n";
+	log << "Node count," << numNodes << "\n";
+	log << "min infected time," << minInfTime << "\n";
+	log << "max infected time," << maxInfTime << "\n";
+	log << "survival rate," << suvRate << "\n";
+	log << "reinfect," << reInfect << "\n";
+	log << "maxSpeed," << maxSpeed << "\n";
+
+	log << NODEHEADER << "\n";
+	srand(randSeed);
+	olc::vd2d posDif = maxPos - minPos;
+	for (int i = 0; i < numNodes; ++i) {
+		olc::vd2d nodePos = minPos + olc::vd2d(drand(), drand()) * posDif;
+		double nodeMaxTravel = minMaxTravel + drand() * (maxMaxTravel - minMaxTravel);
+		nodes.emplace_back(log, i, nodePos, nodeMaxTravel, maxSpeed, reInfect);
+	}
+	nextSeed = rand();
+}
+
 void World::update(){
 	srand(nextSeed);
-	stream << NODEHEADER << "\n";
 	for (auto& node : nodes) {
 		node.move();
 	}
 	for (auto& node : nodes) {
 		node.update(*this);
-		stream << node;
 	}
 	nextSeed = rand();
+
+	if (outputNodeData) {
+		stream << NODEHEADER << "\n";
+		for (auto& node : nodes) {
+			stream << node;
+		}
+	}
 }
 
 bool infectTest (Node& n1, Node& n2) {
@@ -233,11 +245,11 @@ int main(int argc, char** argv)
 			else if (strcmp(argv[i], "--suvRate") == 0) {
 				wp.suvRate = std::stod(argv[++i]);
 			}
-			else if (strcmp(argv[i], "--minMaxTravel") == 0) {
-				wp.minMaxTravel = std::stod(argv[++i]);
+			else if (strcmp(argv[i], "--minInfTime") == 0) {
+				wp.minInfTime = std::stod(argv[++i]);
 			}
-			else if (strcmp(argv[i], "--maxMaxTravel") == 0) {
-				wp.maxMaxTravel = std::stod(argv[++i]);
+			else if (strcmp(argv[i], "--maxInfTime") == 0) {
+				wp.maxInfTime = std::stod(argv[++i]);
 			}
 			else if (strcmp(argv[i], "--minPosX") == 0) {
 				wp.minPos.x = std::stod(argv[++i]);
@@ -268,6 +280,10 @@ int main(int argc, char** argv)
 			}
 			else if(strcmp(argv[i], "--seed") == 0) {
 				wp.randSeed = std::stoi(argv[++i]);
+			}
+			else if(strcmp(argv[i], "--outputNodeData") == 0) {
+				++i;
+				wp.outputNodeData = (strcmp(argv[i], "on") == 0 || strcmp(argv[i], "true") == 0) ? true : false;
 			}
 			else {
 				++falls;

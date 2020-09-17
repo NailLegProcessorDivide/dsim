@@ -31,5 +31,9 @@
 *.out
 *.app
 
+# VS2019 guff
+.vs/*
+x64/*
+
 
 *.csv
