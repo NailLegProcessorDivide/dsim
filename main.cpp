@@ -39,6 +39,7 @@ struct WorldParams {
 	int randSeed;
 	bool origin;
 	bool showRange;
+	bool outputNodeData = true;
 };
 
 class World {
@@ -51,12 +52,13 @@ public:
 	double maxSpeed;
 	std::ostream& stream;
 	int nextSeed;
+	bool outputNodeData;
 
 	World(WorldParams wParams) : World(wParams.log, wParams.numNodes, wParams.minInfTime, wParams.maxInfTime, wParams.suvRate, wParams.reInfect,
-	 wParams.minMaxTravel, wParams.maxMaxTravel, wParams.maxPos, wParams.minPos, wParams.maxSpeed, wParams.randSeed) {}
+	 wParams.minMaxTravel, wParams.maxMaxTravel, wParams.maxPos, wParams.minPos, wParams.maxSpeed, wParams.outputNodeData, wParams.randSeed) {}
 
 	World(std::ostream& log, int numNodes, int minInfTime, int maxInfTime, double suvRate, bool reInfect, double minMaxTravel,
-	 double maxMaxTravel, olc::vd2d maxPos, olc::vd2d minPos, double maxSpeed, int randSeed = 0);
+	 double maxMaxTravel, olc::vd2d maxPos, olc::vd2d minPos, double maxSpeed, bool outputNodeData, int randSeed = 0);
 
 	World(World&) = delete;
 
@@ -108,8 +110,8 @@ public:
 };
 
 World::World(std::ostream& log, int numNodes, int minInfTime, int maxInfTime, double suvRate, bool reInfect, double minMaxTravel,
-	double maxMaxTravel, olc::vd2d maxPos, olc::vd2d minPos, double maxSpeed, int randSeed /*= 0*/) 
-	: nodes(), minInfTime(minInfTime), maxInfTime(maxInfTime), suvRate(suvRate), maxSpeed(maxSpeed), stream(log)
+	double maxMaxTravel, olc::vd2d maxPos, olc::vd2d minPos, double maxSpeed, bool outputNodeData, int randSeed /*= 0*/) 
+	: nodes(), minInfTime(minInfTime), maxInfTime(maxInfTime), suvRate(suvRate), maxSpeed(maxSpeed), outputNodeData(outputNodeData), stream(log)
 {	
 	log << "seed," << randSeed << "\n";
 	log << "Node count," << numNodes << "\n";
@@ -132,15 +134,20 @@ World::World(std::ostream& log, int numNodes, int minInfTime, int maxInfTime, do
 
 void World::update(){
 	srand(nextSeed);
-	stream << NODEHEADER << "\n";
 	for (auto& node : nodes) {
 		node.move();
 	}
 	for (auto& node : nodes) {
 		node.update(*this);
-		stream << node;
 	}
 	nextSeed = rand();
+
+	if (outputNodeData) {
+		stream << NODEHEADER << "\n";
+		for (auto& node : nodes) {
+			stream << node;
+		}
+	}
 }
 
 bool infectTest (Node& n1, Node& n2) {
@@ -273,6 +280,10 @@ int main(int argc, char** argv)
 			}
 			else if(strcmp(argv[i], "--seed") == 0) {
 				wp.randSeed = std::stoi(argv[++i]);
+			}
+			else if(strcmp(argv[i], "--outputNodeData") == 0) {
+				++i;
+				wp.outputNodeData = (strcmp(argv[i], "on") == 0 || strcmp(argv[i], "true") == 0) ? true : false;
 			}
 			else {
 				++falls;
